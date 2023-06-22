@@ -1,0 +1,10 @@
+
+spack:
+  specs:
+  - hpx@1.9.0 %gcc@12.2.1
+
+  container:
+    format: singularity
+    images:
+      os: "centos7"
+      spack: "latest"
