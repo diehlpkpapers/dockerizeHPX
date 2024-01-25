@@ -1,10 +1,21 @@
 
 spack:
   specs:
-  - hpx@1.9.0 %gcc@12.2.1
-
+  - cmake
+  - hpx@1.9
   container:
     format: singularity
     images:
-      os: "centos7"
+      os: "fedora:38"
       spack: "latest"
+    extra_instructions:
+      final: |
+          RUN git clone https://github.com/STEllAR-GROUP/parallelnumericalintegration.git \
+            cd parallelnumericalintegration \
+            mkdir build \
+            cd build \
+            cmake .. \
+            make -j 2
+    os_packages:
+        final:
+            - util-linux 
