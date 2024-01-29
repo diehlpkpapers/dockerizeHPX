@@ -1,9 +1,9 @@
 Bootstrap: docker
-From: centos:7
+From: fedora:37
 Stage: build
 
 %environment
-SPACK_PYTHON=python3.11
+#SPACK_PYTHON=python3.11
 SPACK_ROOT=/opt/spack
 export SPACK_ROOT
 export PATH=$SPACK_ROOT/bin:$PATH
@@ -16,29 +16,17 @@ export SPACK_ROOT=/opt/spack
 export SPACK_ROOT
 export PATH=$SPACK_ROOT/bin:$PATH
 
-yum -y update
-yum -y install wget
-yum -y install git 
-yum -y groupinstall 'Development Tools'
-yum -y install make cmake  bzip2-devel libffi-devel zlib-devel patchelf environment-modules
-yum -y remove openssl openssl-devel
+dnf -y update
+dnf -y install wget
+dnf -y install git gnupg which
+dnf -y groupinstall 'Development Tools'
+dnf -y install make cmake  bzip2-devel libffi-devel zlib-devel patchelf environment-modules
+dnf -y install gcc-c++
+dnf -y install gcc-gfortran
 
-wget https://www.openssl.org/source/openssl-1.1.1w.tar.gz
-tar xvf openssl-1.1.1w.tar.gz
-cd openssl-1.1*/
-./config --prefix=/usr/local/openssl --openssldir=/usr/local/openssl
-make -j
-make install
-ldconfig
-
-wget https://www.python.org/ftp/python/3.11.6/Python-3.11.6.tgz
-tar xvf Python-3.11.6.tgz
-cd Python-3.11*/
-LDFLAGS="${LDFLAGS} -Wl,-rpath=/usr/local/openssl/lib" ./configure --with-openssl=/usr/local/openssl 
-make
-make altinstall
-
-SPACK_PYTHON=python3.11
+gcc --version
+g++ --version
+gfortran --version
 
 git clone --depth=100 --branch=releases/v0.20 https://github.com/spack/spack.git $SPACK_ROOT
 . $SPACK_ROOT/share/spack/setup-env.sh
@@ -46,16 +34,17 @@ git clone --depth=100 --branch=releases/v0.20 https://github.com/spack/spack.git
 git clone https://github.com/G-071/octotiger-spack.git /opt/octotiger-spack
 spack repo add /opt/octotiger-spack
 
-spack compiler find
+spack compiler find --scope system $(which gcc)
+spack compiler find --scope system $(which g++)
+spack compiler find --scope system $(which gfortran)
 
-
-#spack install gcc@12.2.0
+spack compiler list 
 
 # Install bzip
-#spack install bzip2%gcc@12.2.0
+spack install bzip2%gcc@12.3.1
 
 # Build Ocot-Tiger without mpi
-#spack -v  install -j 4 octotiger@0.10.0 +kokkos +kokkos_hpx_kernels simd_extension=SVE simd_library=STD build_type=Release %gcc@12.2.0 ^hpx malloc=jemalloc networking=none instrumentation=apex +generic_coroutines ^bzip2@1.0.6 ^git@2.39.1 ^silo~mpi
+spack -v  install -j 4 octotiger@0.10.0 +kokkos +kokkos_hpx_kernels simd_extension=SVE simd_library=STD build_type=Release %gcc@12.3.1 ^hpx malloc=jemalloc networking=none instrumentation=apex +generic_coroutines ^bzip2@1.0.6  ^silo~mpi
 
 %labels
     Author Patrick Diehl
