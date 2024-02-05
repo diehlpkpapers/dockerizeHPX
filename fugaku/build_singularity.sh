@@ -2,7 +2,7 @@
 #PJM -L "node=1"
 #PJM --mpi "shape=1" 
 #PJM -L "rscgrp=small"
-#PJM -L "elapse=04:30:00"
+#PJM -L "elapse=00:30:00"
 #PJM -L "jobenv=singularity"
 #PJM -g ra010008
 #PJM -x PJM_LLIO_GFSCACHE=/vol0004
@@ -12,6 +12,7 @@ cd /vol0004/ra010008/data/u10393/
 
 newgrp fugaku
 export TMPDIR=/worktmp
-singularity build --fakeroot /worktmp/octotiger.simg octo.def
+
+singularity build -F /worktmp/wamta24.simg docker://stevenrbrandt/wamta24:arm64
 
 cp /worktmp/octotiger.simg /vol0004/ra010008/data/u10393/

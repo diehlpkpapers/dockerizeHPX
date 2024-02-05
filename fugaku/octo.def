@@ -17,7 +17,7 @@ export SPACK_ROOT
 export PATH=$SPACK_ROOT/bin:$PATH
 
 dnf -y update
-dnf -y install wget
+dnf -y install wget hostname
 dnf -y install git gnupg which
 dnf -y groupinstall 'Development Tools'
 dnf -y install make cmake  bzip2-devel libffi-devel zlib-devel patchelf environment-modules
@@ -28,23 +28,25 @@ gcc --version
 g++ --version
 gfortran --version
 
+mkdir /opt/spack_singularity
+
 git clone --depth=100 --branch=releases/v0.20 https://github.com/spack/spack.git $SPACK_ROOT
 . $SPACK_ROOT/share/spack/setup-env.sh
 
 git clone https://github.com/G-071/octotiger-spack.git /opt/octotiger-spack
-spack repo add /opt/octotiger-spack
+spack -C /opt/spack_singularity repo add /opt/octotiger-spack
 
-spack compiler find --scope system $(which gcc)
-spack compiler find --scope system $(which g++)
-spack compiler find --scope system $(which gfortran)
+spack -C /opt/spack_singularity  compiler find --scope system $(which gcc)
+spack -C /opt/spack_singularity compiler find --scope system $(which g++)
+spack -C /opt/spack_singularity compiler find --scope system $(which gfortran)
 
-spack compiler list 
+spack -C /opt/spack_singularity compiler list 
 
 # Install bzip
-spack install bzip2%gcc@12.3.1
+spack -C /opt/spack_singularity install bzip2%gcc@12.3.1
 
 # Build Ocot-Tiger without mpi
-spack -v  install -j 4 octotiger@0.10.0 +kokkos +kokkos_hpx_kernels simd_extension=SVE simd_library=STD build_type=Release %gcc@12.3.1 ^hpx malloc=jemalloc networking=none instrumentation=apex +generic_coroutines ^bzip2@1.0.6  ^silo~mpi
+spack -C /opt/spack_singularity -v  install -j 4 octotiger@master +kokkos +kokkos_hpx_kernels simd_extension=SVE simd_library=STD build_type=Release %gcc@12.3.1 ^hpx malloc=jemalloc networking=none instrumentation=apex +generic_coroutines ^bzip2@1.0.6  ^silo~mpi
 
 %labels
     Author Patrick Diehl
