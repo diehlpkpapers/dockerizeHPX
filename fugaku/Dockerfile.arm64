@@ -1,0 +1,74 @@
+FROM ubuntu:22.04
+ENV DEBIAN_FRONTEND noninteractive
+
+RUN apt update -y
+RUN apt-get install -y git curl vim build-essential gfortran subversion make cmake xz-utils file \
+    emacs locales locales-all libhdf5-dev \
+    mpich libmpich-dev libhwloc-dev libboost-all-dev \
+    python3-pip python3-dev zip python3-sympy python3-numpy python3-matplotlib ffmpeg gdb cvs
+
+RUN useradd -m jovyan
+USER jovyan
+WORKDIR /home/jovyan
+
+WORKDIR /home/jovyan
+RUN git clone https://github.com/VcDevel/Vc.git
+WORKDIR /home/jovyan/Vc/build
+RUN cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/home/jovyan/install/vc ..
+RUN make -j10
+RUN make install
+
+WORKDIR /home/jovyan
+RUN git clone https://github.com/STEllAR-GROUP/hpx.git
+WORKDIR /home/jovyan/hpx/build
+RUN cmake -DHPX_WITH_MAX_CPU_COUNT=80 \
+          -DCMAKE_INSTALL_PREFIX=/home/jovyan/install/hpx \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DHPX_WITH_FETCH_ASIO=ON \
+          -DHPX_WITH_GENERIC_CONTEXT_COROUTINES=ON \
+          -DHPX_WITH_MALLOC=system ..
+RUN make -j10 install
+
+ENV CMAKE_PREFIX_PATH /home/jovyan/install/vc/lib/cmake:/home/jovyan/install/hpx/lib/cmake
+
+WORKDIR /home/jovyan
+RUN git clone https://github.com/SC-SGS/CPPuddle
+WORKDIR /home/jovyan/CPPuddle/build
+RUN cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/home/jovyan/install/cppuddle ..
+RUN make -j10 install
+
+ENV CMAKE_PREFIX_PATH /home/jovyan/install/vc/lib/cmake:/home/jovyan/install/hpx/lib/cmake:/home/jovyan/install/cppuddle/lib/cmake
+
+# Key step. Octotiger needs Silo built with -fPIC
+ENV CFLAGS -fPIC
+ENV CXXFLAGS -fPIC
+WORKDIR /home/jovyan
+# Preferred version from spack
+RUN curl -LO https://github.com/LLNL/Silo/releases/download/4.11.1/silo-4.11.1-bsd.tar.xz
+RUN tar xvf silo-4.11.1-bsd.tar.xz
+RUN mv silo-4.11.1-bsd Silo
+WORKDIR /home/jovyan/Silo
+RUN ./configure
+RUN make -j10
+RUN make install
+
+WORKDIR /home/jovyan
+RUN git clone https://github.com/STEllAR-GROUP/octotiger
+WORKDIR /home/jovyan/octotiger/build
+
+RUN cmake -DCMAKE_BUILD_TYPE=Release \
+    -DSilo_LIBRARY=/home/jovyan/Silo/lib/libsilo.a \
+    -DSilo_INCLUDE_DIR=/home/jovyan/Silo/include \
+    -DSilo_BROWSER=/home/jovyan/Silo/bin/browser \
+    -DOCTOTIGER_WITH_TESTS=OFF \
+    -DOCTOTIGER_WITH_BLAST_TEST=OFF \
+    -DCMAKE_INSTALL_PREFIX=/home/jovyan/install/octotiger \
+    ..
+RUN make -j10
+RUN make install
+
+RUN chmod 755 /home/jovyan
+# # The build / push commands
+# docker buildx create --name A64builder --platform linux/arm64
+# docker buildx use A64builder
+# docker buildx build --platform linux/arm64 --file Dockerfile.arm64 --push --tag stevenrbrandt/wamta24:arm64 .

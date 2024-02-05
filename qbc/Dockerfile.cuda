@@ -1,0 +1,48 @@
+FROM ubuntu:22.04
+ENV DEBIAN_FRONTEND noninteractive
+
+RUN apt update -y
+RUN apt-get install -y git curl vim build-essential gfortran subversion make cmake xz-utils file \
+    emacs locales locales-all \
+    python3-pip python3-dev zip python3-sympy python3-numpy python3-matplotlib ffmpeg gdb cvs nvidia-driver-535 && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN useradd -m jovyan
+USER jovyan
+WORKDIR /home/jovyan
+ENV SPACK_ROOT /home/jovyan/spack
+RUN git clone --depth 1 https://github.com/spack/spack.git "$SPACK_ROOT"
+
+ENV SPACK_SKIP_MODULES 1
+ENV SPACK_PYTHON /usr/bin/python3
+ENV PATH $SPACK_ROOT/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+
+RUN git clone https://github.com/G-071/octotiger-spack.git
+RUN spack repo add octotiger-spack
+RUN spack compiler find
+# Spack insists on putting a nonworking g++-12 stub in here
+COPY compilers.yaml ./.spack/linux/compilers.yaml
+RUN spack external find --not-buildable gmake perl
+
+RUN spack install octotiger
+RUN spack install octotiger+kokkos~cuda
+
+# Octocuda!
+ENV SPACK_ENV_NAME=octocuda
+RUN spack env create ${SPACK_ENV_NAME}
+
+# Avoid having multiple versions of packages
+RUN spack -e $SPACK_ENV_NAME config add concretizer:reuse:true
+RUN spack -e $SPACK_ENV_NAME config add concretizer:unify:true
+
+RUN spack -e $SPACK_ENV_NAME add cuda@12.1.1
+RUN spack -e $SPACK_ENV_NAME add kokkos +cuda cuda_arch=70
+RUN spack -e $SPACK_ENV_NAME add hpx-kokkos +cuda cuda_arch=70
+RUN spack -e $SPACK_ENV_NAME add octotiger +kokkos +cuda cuda_arch=70
+
+RUN spack -e $SPACK_ENV_NAME install --fail-fast
+#RUN spack install cuda
+#RUN spack compiler find
+#RUN spack install hpx-kokkos +cuda cuda_arch=70 ^cuda@12.1.1 ^kokkos +cuda cuda_arch=70
+#RUN spack install octotiger@master +kokkos  build_type=Release %gcc@12.2.0  ^hpx@master malloc=jemalloc networking=mpi   ^cppuddle +allocator_counters ^silo~mpi +cuda cuda_arch=12
+RUN chmod 755 /home/jovyan
