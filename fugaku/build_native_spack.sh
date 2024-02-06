@@ -11,19 +11,19 @@
 
 # Load private spack 
 cd /vol0004/ra010008/data/u10393
-git clone https://github.com/RIKEN-RCCS/spack.git spackfugaku
+#git clone https://github.com/RIKEN-RCCS/spack.git spackfugaku
 . ./spackfugaku/share/spack/setup-env.sh
-echo "upstreams:\n\tspack-public-instance:\n\t\tinstall_tree: /vol0004/apps/oss/spack/opt/spack" > ~/.spack/upstreams.yaml
-spack repo add /vol0004/apps/oss/spack/var/spack/repos/local
+#echo "upstreams:\n\tspack-public-instance:\n\t\tinstall_tree: /vol0004/apps/oss/spack/opt/spack" > ~/.spack/upstreams.yaml
+#spack repo add /vol0004/apps/oss/spack/var/spack/repos/local
 
 # Add Octo-Tiger to spack
-git clone https://github.com/G-071/octotiger-spack.git octotiger-spack
-spack repo add octotiger-spack
+#git clone https://github.com/G-071/octotiger-spack.git octotiger-spack
+#spack repo add octotiger-spack
 
 # Install bzip
-spack install bzip2%gcc@12.2.0
+#spack install bzip2%gcc@12.2.0
 
 # Build Ocot-Tiger without mpi
-spack -v  install -j 4 octotiger@0.10.0 +kokkos +kokkos_hpx_kernels simd_extension=SVE simd_library=STD build_type=Release %gcc@12.2.0 ^hpx malloc=jemalloc networking=none instrumentation=apex +generic_coroutines ^bzip2@1.0.6 ^git@2.39.1 ^silo~mpi
+spack -v  install -j 4 octotiger@0.10.0 +kokkos +kokkos_hpx_kernels simd_extension=SVE simd_library=STD build_type=Release %gcc@12.2.0 ^hpx malloc=system networking=none  +generic_coroutines ^bzip2@1.0.6 ^git@2.39.1 ^silo~mpi
 
 
