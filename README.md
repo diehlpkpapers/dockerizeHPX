@@ -1,1 +1,1 @@
-# HPX in the HPC Cloud: Evaluating Overheads of Cloud resources for HPX/Kokkos using an astrophysics application
+# HPX with Spack and Singularity Containers: Evaluating Overheads for HPX/Kokkos using an astrophysics application
